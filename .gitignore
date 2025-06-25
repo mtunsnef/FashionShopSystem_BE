@@ -24,8 +24,8 @@ appsettings.Development.json
 appsettings.Local.json
 
 # App settings
-appsettings.json
-appsettings.*.json
+# appsettings.json
+# appsettings.*.json
 
 # Environment config
 .env
