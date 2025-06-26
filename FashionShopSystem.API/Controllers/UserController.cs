@@ -6,5 +6,6 @@ namespace FashionShopSystem.API.Controllers
 	[ApiController]
 	public class UserController : ControllerBase
 	{
+
 	}
 }
