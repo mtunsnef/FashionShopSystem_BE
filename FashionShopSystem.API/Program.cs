@@ -35,8 +35,8 @@ namespace FashionShopSystem.API
 				options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
 				{
 					Description = @"JWT Authorization header using the Bearer scheme.
-                      Enter 'Bearer' [space] and then your token in the text input below.
-                      Example: 'Bearer 123456'",
+					  Enter 'Bearer' [space] and then your token in the text input below.
+					  Example: 'Bearer 123456'",
 					Name = "Authorization",
 					In = ParameterLocation.Header,
 					Type = SecuritySchemeType.ApiKey,
