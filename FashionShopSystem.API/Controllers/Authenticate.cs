@@ -133,8 +133,8 @@ namespace FashionShopSystem.API.Controllers
 			}
 
 			Console.WriteLine($"✅ Google login successful. Returning token...");
-			return Ok(new { success = true, token = result.Data, message = result.Message });
-			//return Redirect("FRONTEND")
+			   // Redirect to FE login page with token as query param
+			   return Redirect($"https://localhost:7298/dang-nhap?token={result.Data}");
 		}
 
 	}

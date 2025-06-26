@@ -87,9 +87,11 @@ namespace FashionShopSystem.Service.Services.UserService
 			throw new NotImplementedException();
 		}
 
-		public Task<User?> GetUserByIdAsync(string id)
+		public async Task<User?> GetUserByIdAsync(string id)
 		{
-			throw new NotImplementedException();
+			if (!int.TryParse(id, out var userId))
+				return null;
+			return await _userRepository.GetByIdAsync(userId);
 		}
 
 		public Task<ApiResponseDto<string>> UpdateAccount(string id, CreateUpdateUserDto dto)
