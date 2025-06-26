@@ -66,10 +66,9 @@ namespace FashionShopSystem.API
 			{
 				options.AddPolicy("AllowFrontend", policy =>
 				{
-					policy.WithOrigins("https://localhost:7242", "http://localhost:7242")
+					policy.AllowAnyOrigin()
 						  .AllowAnyHeader()
-						  .AllowAnyMethod()
-						  .AllowCredentials();
+						  .AllowAnyMethod();
 				});
 			});
 

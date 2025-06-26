@@ -67,34 +67,138 @@ namespace FashionShopSystem.Service.Services.UserService
 			return new JwtSecurityTokenHandler().WriteToken(token);
 		}
 
-		public Task<ApiResponseDto<string>> CreateAccount(CreateUpdateUserDto dto)
+		public async Task<ApiResponseDto<string>> CreateAccount(CreateUpdateUserDto dto)
 		{
-			throw new NotImplementedException();
+			Console.WriteLine($"🔍 UserService.CreateAccount called for email: {dto.Email}");
+			
+			try
+			{
+				// Check if user already exists
+				var existingUser = await _userRepository.GetAccountByEmail(dto.Email);
+				if (existingUser != null)
+				{
+					return new ApiResponseDto<string>(false, null, 400, "Email already exists.");
+				}
+
+				var user = new User
+				{
+					FullName = dto.FullName,
+					Email = dto.Email,
+					PasswordHash = dto.Password != null ? BCrypt.Net.BCrypt.HashPassword(dto.Password) : null,
+					Phone = dto.PhoneNumber,
+					Role = dto.RoleId == 1 ? "Admin" : "Customer", // Convert RoleId to Role string
+					CreatedAt = DateTime.UtcNow,
+					IsActive = true
+				};
+
+				await _userRepository.AddAsync(user);
+				Console.WriteLine($"✅ User created successfully with ID: {user.UserId}");
+				
+				return new ApiResponseDto<string>(true, user.UserId.ToString(), 200, "User created successfully.");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"❌ Error creating user: {ex.Message}");
+				return new ApiResponseDto<string>(false, null, 500, "Error creating user.");
+			}
 		}
 
-		public Task<ApiResponseDto<string>> DeleteAccount(string id)
+		public async Task<ApiResponseDto<string>> DeleteAccount(string id)
 		{
-			throw new NotImplementedException();
+			Console.WriteLine($"🔍 UserService.DeleteAccount called for ID: {id}");
+			
+			try
+			{
+				if (!int.TryParse(id, out var userId))
+				{
+					return new ApiResponseDto<string>(false, null, 400, "Invalid user ID format.");
+				}
+
+				var user = await _userRepository.GetByIdAsync(userId);
+				if (user == null)
+				{
+					return new ApiResponseDto<string>(false, null, 404, "User not found.");
+				}
+
+				await _userRepository.DeleteAsync(user);
+				Console.WriteLine($"✅ User {id} deleted successfully");
+				
+				return new ApiResponseDto<string>(true, null, 200, "User deleted successfully.");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"❌ Error deleting user {id}: {ex.Message}");
+				return new ApiResponseDto<string>(false, null, 500, "Error deleting user.");
+			}
 		}
 
-		public Task<User?> GetAccountByEmail(string email)
+		public async Task<User?> GetAccountByEmail(string email)
 		{
-			throw new NotImplementedException();
+			Console.WriteLine($"🔍 UserService.GetAccountByEmail called with email: {email}");
+			return await _userRepository.GetAccountByEmail(email);
 		}
 
-		public Task<List<User>> GetAllAsync()
+		public async Task<List<User>> GetAllAsync()
 		{
-			throw new NotImplementedException();
+			Console.WriteLine("🔍 UserService.GetAllAsync called");
+			return await _userRepository.GetAllAsync();
 		}
 
-		public Task<User?> GetUserByIdAsync(string id)
+		public async Task<User?> GetUserByIdAsync(string id)
 		{
-			throw new NotImplementedException();
+			Console.WriteLine($"🔍 UserService.GetUserByIdAsync called with ID: {id}");
+			
+			if (int.TryParse(id, out var userId))
+			{
+				Console.WriteLine($"✅ Successfully parsed ID {id} to int {userId}");
+				var user = await _userRepository.GetByIdAsync(userId);
+				Console.WriteLine($"📋 Repository returned: {(user != null ? $"User found - {user.Email}" : "User not found")}");
+				return user;
+			}
+			
+			Console.WriteLine($"❌ Failed to parse ID '{id}' to integer");
+			return null;
 		}
 
-		public Task<ApiResponseDto<string>> UpdateAccount(string id, CreateUpdateUserDto dto)
+		public async Task<ApiResponseDto<string>> UpdateAccount(string id, CreateUpdateUserDto dto)
 		{
-			throw new NotImplementedException();
+			Console.WriteLine($"🔍 UserService.UpdateAccount called for ID: {id}");
+			
+			try
+			{
+				if (!int.TryParse(id, out var userId))
+				{
+					return new ApiResponseDto<string>(false, null, 400, "Invalid user ID format.");
+				}
+
+				var user = await _userRepository.GetByIdAsync(userId);
+				if (user == null)
+				{
+					return new ApiResponseDto<string>(false, null, 404, "User not found.");
+				}
+
+				// Update user properties
+				user.FullName = dto.FullName ?? user.FullName;
+				user.Email = dto.Email ?? user.Email;
+				user.Phone = dto.PhoneNumber ?? user.Phone;
+				user.Role = dto.RoleId == 1 ? "Admin" : "Customer";
+				
+				// Only update password if provided
+				if (!string.IsNullOrEmpty(dto.Password))
+				{
+					user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+				}
+
+				await _userRepository.UpdateAsync(user);
+				Console.WriteLine($"✅ User {id} updated successfully");
+				
+				return new ApiResponseDto<string>(true, null, 200, "User updated successfully.");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"❌ Error updating user {id}: {ex.Message}");
+				return new ApiResponseDto<string>(false, null, 500, "Error updating user.");
+			}
 		}
 
 		public async Task<ApiResponseDto<string>> LoginAsync(LoginUserDto dto)
