@@ -1,24 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FashionShopSystem.Domain.Exceptions.Http
+﻿namespace FashionShopSystem.Domain.Exceptions.Http
 {
-    public class UnauthorizedException : Exception
-    {
-        public UnauthorizedException() : base("Unauthorized")
-        {
+	public class UnauthorizedException : Exception
+	{
+		public UnauthorizedException() : base("Unauthorized")
+		{
 
-        }
-        public UnauthorizedException(string message) : base(message)
-        {
+		}
+		public UnauthorizedException(string message) : base(message)
+		{
 
-        }
-        public UnauthorizedException(string message, Exception inner) : base(message, inner)
-        {
+		}
+		public UnauthorizedException(string message, Exception inner) : base(message, inner)
+		{
 
-        }
-    }
+		}
+	}
 }
