@@ -148,13 +148,13 @@ namespace FashionShopSystem.API.Controllers
 		}
 
 		/// <summary>
-		/// Update current user profile
+		/// Update current user profile (partial update)
 		/// </summary>
-		/// <param name="dto">Updated user data</param>
+		/// <param name="dto">Fields to update (only send fields that need to be changed)</param>
 		/// <returns>Update result</returns>
-		[HttpPut("me")]
+		[HttpPatch("me")]
 		[Authorize]
-		public async Task<IActionResult> UpdateCurrentUser([FromBody] CreateUpdateUserDto dto)
+		public async Task<IActionResult> UpdateCurrentUser([FromBody] UpdateUserDto dto)
 		{
 			try
 			{
@@ -165,7 +165,7 @@ namespace FashionShopSystem.API.Controllers
 					return Unauthorized(new { message = "Invalid token: User ID not found" });
 				}
 
-				var result = await _userService.UpdateAccount(userIdClaim, dto);
+				var result = await _userService.PatchAccount(userIdClaim, dto);
 				
 				if (!result.Success)
 				{
@@ -181,18 +181,18 @@ namespace FashionShopSystem.API.Controllers
 		}
 
 		/// <summary>
-		/// Update user by ID (Admin only)
+		/// Update user by ID (Admin only - partial update)
 		/// </summary>
 		/// <param name="id">User ID</param>
-		/// <param name="dto">Updated user data</param>
+		/// <param name="dto">Fields to update (only send fields that need to be changed)</param>
 		/// <returns>Update result</returns>
-		[HttpPut("{id}")]
+		[HttpPatch("{id}")]
 		[Authorize(Roles = "Admin")]
-		public async Task<IActionResult> UpdateUser(string id, [FromBody] CreateUpdateUserDto dto)
+		public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserDto dto)
 		{
 			try
 			{
-				var result = await _userService.UpdateAccount(id, dto);
+				var result = await _userService.PatchAccount(id, dto);
 				
 				if (!result.Success)
 				{
@@ -259,6 +259,39 @@ namespace FashionShopSystem.API.Controllers
 			}
 		}
 
+				/// <summary>
+		/// Change current user's password
+		/// </summary>
+		/// <param name="dto">Current password and new password</param>
+		/// <returns>Change password result</returns>
+		[HttpPatch("me/change-password")]
+		[Authorize]
+		public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+		{
+			try
+			{
+				var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				
+				if (string.IsNullOrEmpty(userIdClaim))
+				{
+					return Unauthorized(new { message = "Invalid token: User ID not found" });
+				}
+
+				var result = await _userService.ChangePassword(userIdClaim, dto);
+				
+				if (!result.Success)
+				{
+					return BadRequest(new { message = result.Message });
+				}
+
+				return Ok(new { message = result.Message });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+			}
+		}
+
 		/// <summary>
 		/// Get JWT token information (for debugging purposes)
 		/// </summary>
@@ -268,7 +301,7 @@ namespace FashionShopSystem.API.Controllers
 		public IActionResult GetTokenInfo()
 		{
 			try
-			{
+			{ 
 				var claims = User.Claims.Select(c => new { type = c.Type, value = c.Value });
 				
 				return Ok(new

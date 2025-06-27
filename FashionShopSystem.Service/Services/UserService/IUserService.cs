@@ -10,6 +10,8 @@ namespace FashionShopSystem.Service.Services.UserService
 		Task<List<User>> GetAllAsync();
 		Task<ApiResponseDto<string>> CreateAccount(CreateUpdateUserDto dto);
 		Task<ApiResponseDto<string>> UpdateAccount(string id, CreateUpdateUserDto dto);
+		Task<ApiResponseDto<string>> PatchAccount(string id, UpdateUserDto dto);
+		Task<ApiResponseDto<string>> ChangePassword(string id, ChangePasswordDto dto);
 		Task<ApiResponseDto<string>> DeleteAccount(string id);
 		Task<User?> GetAccountByEmail(string email);
 		Task<ApiResponseDto<string>> RegisterAsync(RegisterUserDto dto);

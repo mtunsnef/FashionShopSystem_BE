@@ -103,6 +103,58 @@ namespace FashionShopSystem.Service.Services.UserService
 			}
 		}
 
+		public async Task<ApiResponseDto<string>> ChangePassword(string id, ChangePasswordDto dto)
+		{
+			Console.WriteLine($"🔍 UserService.ChangePassword called for ID: {id}");
+			
+			try
+			{
+				if (!int.TryParse(id, out var userId))
+				{
+					return new ApiResponseDto<string>(false, null, 400, "Invalid user ID format.");
+				}
+
+				if (string.IsNullOrEmpty(dto.CurrentPassword))
+				{
+					return new ApiResponseDto<string>(false, null, 400, "Current password is required.");
+				}
+
+				if (string.IsNullOrEmpty(dto.NewPassword))
+				{
+					return new ApiResponseDto<string>(false, null, 400, "New password is required.");
+				}
+
+				var user = await _userRepository.GetByIdAsync(userId);
+				if (user == null)
+				{
+					return new ApiResponseDto<string>(false, null, 404, "User not found.");
+				}
+
+				// Verify current password
+				if (string.IsNullOrEmpty(user.PasswordHash) || !BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
+				{
+					Console.WriteLine($"❌ Invalid current password for user {id}");
+					return new ApiResponseDto<string>(false, null, 400, "Current password is incorrect.");
+				}
+
+				Console.WriteLine($"✅ Current password verified for user {id}");
+
+				// Hash the new password before storing
+				user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+				Console.WriteLine($"🔄 Password changed for user {id}");
+
+				await _userRepository.UpdateAsync(user);
+				Console.WriteLine($"✅ Password updated successfully for user {id}");
+				
+				return new ApiResponseDto<string>(true, null, 200, "Password changed successfully.");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"❌ Error changing password for user {id}: {ex.Message}");
+				return new ApiResponseDto<string>(false, null, 500, "Error changing password.");
+			}
+		}
+
 		public async Task<ApiResponseDto<string>> DeleteAccount(string id)
 		{
 			Console.WriteLine($"🔍 UserService.DeleteAccount called for ID: {id}");
@@ -197,6 +249,90 @@ namespace FashionShopSystem.Service.Services.UserService
 			catch (Exception ex)
 			{
 				Console.WriteLine($"❌ Error updating user {id}: {ex.Message}");
+				return new ApiResponseDto<string>(false, null, 500, "Error updating user.");
+			}
+		}
+
+		public async Task<ApiResponseDto<string>> PatchAccount(string id, UpdateUserDto dto)
+		{
+			Console.WriteLine($"🔍 UserService.PatchAccount called for ID: {id}");
+			Console.WriteLine($"📋 Fields to update: FullName={dto.FullName}, Email={dto.Email}, Phone={dto.PhoneNumber}, RoleId={dto.RoleId}, Password={(dto.Password != null ? "***" : "null")}");
+			
+			try
+			{
+				if (!int.TryParse(id, out var userId))
+				{
+					return new ApiResponseDto<string>(false, null, 400, "Invalid user ID format.");
+				}
+
+				var user = await _userRepository.GetByIdAsync(userId);
+				if (user == null)
+				{
+					return new ApiResponseDto<string>(false, null, 404, "User not found.");
+				}
+
+				Console.WriteLine($"📋 Current user data: FullName={user.FullName}, Email={user.Email}, Phone={user.Phone}, Role={user.Role}");
+
+				bool hasChanges = false;
+
+				// Only update provided fields (true partial update)
+				if (dto.FullName != null && dto.FullName != user.FullName)
+				{
+					Console.WriteLine($"🔄 Updating FullName: {user.FullName} -> {dto.FullName}");
+					user.FullName = dto.FullName;
+					hasChanges = true;
+				}
+				
+				if (dto.Email != null && dto.Email != user.Email)
+				{
+					Console.WriteLine($"🔄 Updating Email: {user.Email} -> {dto.Email}");
+					user.Email = dto.Email;
+					hasChanges = true;
+				}
+				
+				if (dto.PhoneNumber != null && dto.PhoneNumber != user.Phone)
+				{
+					Console.WriteLine($"🔄 Updating Phone: {user.Phone} -> {dto.PhoneNumber}");
+					user.Phone = dto.PhoneNumber;
+					hasChanges = true;
+				}
+				
+				if (dto.RoleId.HasValue)
+				{
+					var newRole = dto.RoleId == 1 ? "Admin" : "Customer";
+					if (newRole != user.Role)
+					{
+						Console.WriteLine($"🔄 Updating Role: {user.Role} -> {newRole}");
+						user.Role = newRole;
+						hasChanges = true;
+					}
+				}
+				
+				// Only update password if provided
+				if (!string.IsNullOrEmpty(dto.Password))
+				{
+					Console.WriteLine("🔄 Updating password");
+					user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+					hasChanges = true;
+				}
+
+				if (hasChanges)
+				{
+					Console.WriteLine("💾 Changes detected, saving to database...");
+					await _userRepository.UpdateAsync(user);
+					Console.WriteLine($"✅ User {id} patched successfully");
+				}
+				else
+				{
+					Console.WriteLine("ℹ️ No changes detected, skipping database update");
+				}
+				
+				return new ApiResponseDto<string>(true, null, 200, "User updated successfully.");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"❌ Error patching user {id}: {ex.Message}");
+				Console.WriteLine($"❌ Stack trace: {ex.StackTrace}");
 				return new ApiResponseDto<string>(false, null, 500, "Error updating user.");
 			}
 		}

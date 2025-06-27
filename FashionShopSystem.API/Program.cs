@@ -1,7 +1,9 @@
 using FashionShopSystem.API.Middlewares;
 using FashionShopSystem.Domain.Models;
 using FashionShopSystem.Infrastructure.Repositories.UserRepo;
+using FashionShopSystem.Infrastructure.Repositories.OrderRepo;
 using FashionShopSystem.Service.Services.UserService;
+using FashionShopSystem.Service.Services.OrderService;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
@@ -81,6 +83,10 @@ namespace FashionShopSystem.API
 			// Add UserService and UserRepository
 			builder.Services.AddScoped<IUserRepository, UserRepository>();
 			builder.Services.AddScoped<IUserService, UserService>();
+
+			// Add OrderService and OrderRepository
+			builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+			builder.Services.AddScoped<IOrderService, OrderService>();
 
 			// Add JWT authentication
 			builder.Services.AddAuthentication(options =>
