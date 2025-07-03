@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FashionShopSystem.Domain\FashionShopSystem.Domain.csproj" />
+    <ProjectReference Include="..\FashionShopSystem.Infrastructure\FashionShopSystem.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

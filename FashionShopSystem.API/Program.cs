@@ -1,5 +1,7 @@
 
 using FashionShopSystem.API.Middlewares;
+using FashionShopSystem.Infrastructure;
+using FashionShopSystem.Service;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.OData;
 using Microsoft.OpenApi.Models;
@@ -11,7 +13,10 @@ namespace FashionShopSystem.API
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddScoped<IProductService, ProductService>();
 
+
+            builder.Services.AddScoped<IProductRepo, ProductRepo>();
             //odata support
             builder.Services.AddControllers()
                 .AddOData(options =>
