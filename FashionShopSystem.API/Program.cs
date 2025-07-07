@@ -97,6 +97,9 @@ namespace FashionShopSystem.API
             });
             // Add OrderService and OrderRepository
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+			// Add OrderService and OrderRepository
+			builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 			builder.Services.AddScoped<IOrderService, OrderService>();
 
 			// Add JWT authentication
@@ -127,14 +130,20 @@ namespace FashionShopSystem.API
 				app.UseSwagger();
 				app.UseSwaggerUI();
 			}
+
 			app.UseGlobalExceptionHandler();
 
 			app.UseHttpsRedirection();
 			app.UseForwardedHeaders();
 
 			app.UseCors("AllowFrontend");
+
             app.UseStaticFiles();
-            app.UseAuthentication();
+
+
+
+			app.UseAuthentication();
+
 			app.UseAuthorization();
 
 			app.MapControllers();
