@@ -1,6 +1,6 @@
 ﻿namespace FashionShopSystem.API.Middlewares
 {
-    public class CustomAuthorizationMiddleware
-    {
-    }
+	public class CustomAuthorizationMiddleware
+	{
+	}
 }
