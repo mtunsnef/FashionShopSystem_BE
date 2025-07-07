@@ -54,3 +54,4 @@ node_modules/
 # Others
 *.db
 *.sqlite
+FashionShopSystem.API/appsettings.json 

@@ -8,6 +8,8 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using FashionShopSystem.Infrastructure;
+using FashionShopSystem.Service;
 
 namespace FashionShopSystem.API
 {
@@ -83,6 +85,18 @@ namespace FashionShopSystem.API
 			// Add UserService and UserRepository
 			builder.Services.AddScoped<IUserRepository, UserRepository>();
 			builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<ICategoryRepo, CategoryRepo>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
+			builder.Services.AddScoped<IProductRepo, ProductRepo>();
+            builder.Services.AddScoped<IProductService>(provider =>
+            {
+                var productRepo = provider.GetRequiredService<IProductRepo>();
+                var env = provider.GetRequiredService<IWebHostEnvironment>();
+
+                return new ProductService(productRepo, env.WebRootPath);
+            });
+            // Add OrderService and OrderRepository
+            builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 			// Add OrderService and OrderRepository
 			builder.Services.AddScoped<IOrderRepository, OrderRepository>();
@@ -124,7 +138,12 @@ namespace FashionShopSystem.API
 
 			app.UseCors("AllowFrontend");
 
+            app.UseStaticFiles();
+
+
+
 			app.UseAuthentication();
+
 			app.UseAuthorization();
 
 			app.MapControllers();
