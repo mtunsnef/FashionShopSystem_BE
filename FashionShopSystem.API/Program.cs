@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using FashionShopSystem.Infrastructure;
 using FashionShopSystem.Service;
+using FashionShopSystem.Service.Services;
 
 namespace FashionShopSystem.API
 {
@@ -103,6 +104,8 @@ namespace FashionShopSystem.API
 			// Add OrderService and OrderRepository
 			builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 			builder.Services.AddScoped<IOrderService, OrderService>();
+
+            
 
 			// Add JWT authentication
 			builder.Services.AddAuthentication(options =>

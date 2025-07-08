@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FashionShopSystem.Domain.Models;
 using FashionShopSystem.Infrastructure;
 using FashionShopSystem.Service.DTOs.ApiResponseDto;
+using FashionShopSystem.Infrastructure.Repositories;
+using FashionShopSystem.Service.DTOs;
 
-namespace FashionShopSystem.Service
+
+namespace FashionShopSystem.Service.Services
 {
     public class ProductService : IProductService
     {
@@ -18,7 +16,12 @@ namespace FashionShopSystem.Service
             _productRepo = productRepo;
             _webRootPath = webRootPath;
         }
-        public async Task<IEnumerable<ProductResponseDto>> GetAllProductsAsync(int? categoryid, string? keyword, string? sort,string? brand, decimal? price)
+        public async Task<IEnumerable<ProductResponseDto>> GetAllProductsAsync(
+    int? categoryid,
+    string? keyword,
+    string? sort,
+    string? brand,
+    decimal? price)
         {
             var product = await _productRepo.GetAllAsync();
 
@@ -29,9 +32,58 @@ namespace FashionShopSystem.Service
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                product = product.Where(p => !string.IsNullOrEmpty(p.ProductName) && p.ProductName.Contains(keyword, StringComparison.OrdinalIgnoreCase)).ToList();
+                product = product.Where(p =>
+                    (!string.IsNullOrEmpty(p.ProductName) &&
+                     p.ProductName.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                    ||
+                    (!string.IsNullOrEmpty(p.Brand) &&
+                     p.Brand.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                ).ToList();
             }
-            // Sort theo giá
+
+            decimal? minPrice = null;
+            decimal? maxPrice = null;
+
+            switch (price)
+            {
+                case 1:
+                    minPrice = 0; maxPrice = 50000;
+                    break;
+                case 2:
+                    minPrice = 50000; maxPrice = 200000;
+                    break;
+                case 3:
+                    minPrice = 200000; maxPrice = 300000;
+                    break;
+                case 4:
+                    minPrice = 300000; maxPrice = 400000;
+                    break;
+                case 5:
+                    minPrice = 400000; maxPrice = 500000;
+                    break;
+                case 6:
+                    minPrice = 500000; maxPrice = null;
+                    break;
+            }
+
+            if (minPrice.HasValue)
+            {
+                product = product.Where(p => p.Price.HasValue && p.Price.Value >= minPrice.Value).ToList();
+            }
+
+            if (maxPrice.HasValue)
+            {
+                product = product.Where(p => p.Price.HasValue && p.Price.Value <= maxPrice.Value).ToList();
+            }
+
+            // Lọc theo thương hiệu
+            if (!string.IsNullOrWhiteSpace(brand))
+            {
+                product = product.Where(p => p.Brand != null &&
+                                             p.Brand.Contains(brand, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            // Sắp xếp
             if (!string.IsNullOrWhiteSpace(sort))
             {
                 if (sort.Equals("asc", StringComparison.OrdinalIgnoreCase))
@@ -43,11 +95,9 @@ namespace FashionShopSystem.Service
                     product = product.OrderByDescending(p => p.Price).ToList();
                 }
             }
-            if (!string.IsNullOrWhiteSpace(brand)) { 
-            product = product.Where(p => p.Brand != null && p.Brand.Contains(brand, StringComparison.OrdinalIgnoreCase)).ToList();
-            }
 
-                var listProduct = product.Select(p => new ProductResponseDto
+            // Map sang DTO
+            var listProduct = product.Select(p => new ProductResponseDto
             {
                 ProductId = p.ProductId,
                 ProductName = p.ProductName,
@@ -69,6 +119,24 @@ namespace FashionShopSystem.Service
 
             return listProduct;
         }
+
+
+        public async Task<IEnumerable<ProductDto>> SearchProductsAsync(int? categoryId, string? brand, decimal? minPrice, decimal? maxPrice, string? keyword)
+        {
+            var products = await _productRepo.GetFilteredProductsAsync(categoryId, brand, minPrice, maxPrice, keyword);
+
+            return products.Select(p => new ProductDto
+            {
+                ProductId = p.ProductId,
+                ProductName = p.ProductName,
+                Brand = p.Brand,
+                ImageUrl = p.ImageUrl,
+                Price = p.Price,
+                CategoryId = p.CategoryId,
+                CategoryName = p.Category?.CategoryName
+            });
+        }
+
 
         public async Task<ProductResponseDto> GetProductByIdAsync(int id)
         {

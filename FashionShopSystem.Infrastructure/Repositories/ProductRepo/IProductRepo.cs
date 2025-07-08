@@ -10,5 +10,6 @@ namespace FashionShopSystem.Infrastructure
 {
     public interface IProductRepo : IRepositoryBase<Product>
     {
+        Task<IEnumerable<Product>> GetFilteredProductsAsync(int? categoryId, string? brand, decimal? minPrice, decimal? maxPrice, string? keyword);
     }
 }
