@@ -14,14 +14,14 @@ namespace FashionShopSystem.Infrastructure
         public ProductRepo(FashionShopContext context) : base(context)
         {
         }
-        public override Task<List<Product>> GetAllAsync()
+        public override async Task<List<Product>> GetAllAsync()
         {
-            var products = _dbSet
+            var products =  _dbSet
                 .Include(p => p.Category)
                 .Include(p => p.Favorites)
                 .Include(p => p.OrderDetails)
                 .AsQueryable();
-            return products.ToListAsync();
+            return await products.ToListAsync();
         }
         public override async Task<Product?> GetByIdAsync(object id)
         {
