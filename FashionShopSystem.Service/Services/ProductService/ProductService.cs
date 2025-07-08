@@ -18,7 +18,7 @@ namespace FashionShopSystem.Service
             _productRepo = productRepo;
             _webRootPath = webRootPath;
         }
-        public async Task<IEnumerable<ProductResponseDto>> GetAllProductsAsync(int? categoryid, string? keyword, string? sort)
+        public async Task<IEnumerable<ProductResponseDto>> GetAllProductsAsync(int? categoryid, string? keyword, string? sort,string? brand, decimal? price)
         {
             var product = await _productRepo.GetAllAsync();
 
@@ -29,9 +29,8 @@ namespace FashionShopSystem.Service
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                product = product.Where(p => p.ProductName.Contains(keyword, StringComparison.OrdinalIgnoreCase)).ToList();
+                product = product.Where(p => !string.IsNullOrEmpty(p.ProductName) && p.ProductName.Contains(keyword, StringComparison.OrdinalIgnoreCase)).ToList();
             }
-
             // Sort theo giá
             if (!string.IsNullOrWhiteSpace(sort))
             {
@@ -44,8 +43,11 @@ namespace FashionShopSystem.Service
                     product = product.OrderByDescending(p => p.Price).ToList();
                 }
             }
+            if (!string.IsNullOrWhiteSpace(brand)) { 
+            product = product.Where(p => p.Brand != null && p.Brand.Contains(brand, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
 
-            var listProduct = product.Select(p => new ProductResponseDto
+                var listProduct = product.Select(p => new ProductResponseDto
             {
                 ProductId = p.ProductId,
                 ProductName = p.ProductName,
@@ -226,6 +228,14 @@ namespace FashionShopSystem.Service
                 Stock = product.Stock,
             };
             return new ApiResponseDto<ProductResponseDto>(true, Data, 200);
+        }
+        public async Task<List<string>> getAllBrand() { 
+        var brand = _productRepo.GetAllAsync().Result
+            .Select(p => p.Brand)
+            .Where(b => !string.IsNullOrEmpty(b))
+            .Distinct()
+            .ToList();
+            return brand;
         }
 
     }

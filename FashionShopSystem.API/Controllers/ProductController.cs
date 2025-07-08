@@ -14,11 +14,11 @@ namespace FashionShopSystem.API.Controllers
             _productService = productService;
         }
         [HttpGet("Product")]
-        public async Task<IActionResult> GetAllProductsAsync(int? categoryid, string? keyword,string? sort)
+        public async Task<IActionResult> GetAllProductsAsync(int? categoryid, string? keyword,string? sort, string? brand, decimal? price)
         {
             try
             {
-                var products = await _productService.GetAllProductsAsync(categoryid, keyword,sort);
+                var products = await _productService.GetAllProductsAsync(categoryid, keyword,sort,brand,price);
                 return Ok(products);
             }
             catch (Exception ex)
@@ -61,6 +61,19 @@ namespace FashionShopSystem.API.Controllers
         {
             var result = await _productService.deteletProduct(Id);
             return Ok(result);
+        }
+        [HttpGet("Brand")]
+        public async Task<IActionResult> GetAllBrand()
+        {
+            try
+            {
+                var brands = await _productService.getAllBrand();
+                return Ok(brands);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Error retrieving brands: {ex.Message}");
+            }
         }
     }
 }

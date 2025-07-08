@@ -88,6 +88,8 @@ namespace FashionShopSystem.API
             builder.Services.AddScoped<ICategoryRepo, CategoryRepo>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
 			builder.Services.AddScoped<IProductRepo, ProductRepo>();
+			builder.Services.AddScoped<IFavouriteRepo, FavouriteRepo>();
+			builder.Services.AddScoped<IFavouriteService, FavouriteService>();
             builder.Services.AddScoped<IProductService>(provider =>
             {
                 var productRepo = provider.GetRequiredService<IProductRepo>();
