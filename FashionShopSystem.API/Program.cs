@@ -8,6 +8,10 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Net.payOS;
+using FashionShopSystem.Infrastructure;
+using FashionShopSystem.Service;
+using FashionShopSystem.Service.Services;
 
 namespace FashionShopSystem.API
 {
@@ -31,6 +35,7 @@ namespace FashionShopSystem.API
 					options.JsonSerializerOptions.PropertyNamingPolicy = null;
 				});
 
+			//config 
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen(options =>
 			{
@@ -63,6 +68,15 @@ namespace FashionShopSystem.API
 				});
 			});
 
+			IConfiguration configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+			PayOS payOS = new PayOS(
+				configuration["PayOS:ClientId"] ?? throw new Exception("Cannot find PayOS Client ID"),
+				configuration["PayOS:ApiKey"] ?? throw new Exception("Cannot find PayOS API Key"),
+				configuration["PayOS:ChecksumKey"] ?? throw new Exception("Cannot find PayOS Checksum Key")
+			);
+			builder.Services.AddSingleton(payOS);
+			builder.Services.AddHttpContextAccessor();
+
 			//Add cors
 			builder.Services.AddCors(options =>
 			{
@@ -75,18 +89,35 @@ namespace FashionShopSystem.API
 			});
 
 			// Add Database configuration
+			builder.Services.AddDbContext<FashionShopContext>(options =>
+			options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
 
 			// Add Fluent Validation
 			builder.Services.AddFluentValidationAutoValidation();
-			builder.Services.AddDbContext<FashionShopContext>(options =>
-	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
+
 			// Add UserService and UserRepository
 			builder.Services.AddScoped<IUserRepository, UserRepository>();
 			builder.Services.AddScoped<IUserService, UserService>();
+			builder.Services.AddScoped<ICategoryRepo, CategoryRepo>();
+			builder.Services.AddScoped<ICategoryService, CategoryService>();
+			builder.Services.AddScoped<IProductRepo, ProductRepo>();
+			builder.Services.AddScoped<IFavouriteRepo, FavouriteRepo>();
+			builder.Services.AddScoped<IFavouriteService, FavouriteService>();
+			builder.Services.AddScoped<IProductService>(provider =>
+			{
+				var productRepo = provider.GetRequiredService<IProductRepo>();
+				var env = provider.GetRequiredService<IWebHostEnvironment>();
+
+				return new ProductService(productRepo, env.WebRootPath);
+			});
+			// Add OrderService and OrderRepository
+			builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 			// Add OrderService and OrderRepository
 			builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 			builder.Services.AddScoped<IOrderService, OrderService>();
+
+
 
 			// Add JWT authentication
 			builder.Services.AddAuthentication(options =>
@@ -124,7 +155,12 @@ namespace FashionShopSystem.API
 
 			app.UseCors("AllowFrontend");
 
+			app.UseStaticFiles();
+
+
+
 			app.UseAuthentication();
+
 			app.UseAuthorization();
 
 			app.MapControllers();
