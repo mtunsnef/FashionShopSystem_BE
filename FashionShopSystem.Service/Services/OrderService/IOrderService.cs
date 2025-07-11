@@ -15,5 +15,7 @@ namespace FashionShopSystem.Service.Services.OrderService
 		Task<OrderResponseDto?> GetOrderDetailsAsync(int id);
 		Task<List<OrderResponseDto>> GetOrdersWithDetailsAsync();
 		Task<List<OrderResponseDto>> GetUserOrdersWithDetailsAsync(int userId);
-	}
+		Task<ApiResponseDto<OrderResponseDto>> CreateOrderFromCheckoutAsync(int userId, CreateOrderFromCheckoutDto dto);
+
+    }
 } 
