@@ -6,6 +6,7 @@ using Net.payOS;
 namespace FashionShopSystem.API.Controllers.Payos
 {
     [Route("[controller]")]
+    [ApiController]
     public class OrderController : Controller
     {
         private readonly PayOS _payOS;
@@ -84,5 +85,7 @@ namespace FashionShopSystem.API.Controllers.Payos
             }
 
         }
+
+
     }
 }

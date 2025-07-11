@@ -241,5 +241,17 @@ namespace FashionShopSystem.API.Controllers
 				return StatusCode(500, new { message = "Internal server error", error = ex.Message });
 			}
 		}
-	}
+
+        [HttpPost("place-order")]
+        [Authorize]
+        public async Task<IActionResult> CreateOrderFromCheckout([FromBody] CreateOrderFromCheckoutDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                return Unauthorized(new { message = "Vui lòng đăng nhập để đặt hàng." });
+
+            var result = await _orderService.CreateOrderFromCheckoutAsync(userId, dto);
+            return StatusCode(result.StatusCode, result);
+        }
+    }
 } 
