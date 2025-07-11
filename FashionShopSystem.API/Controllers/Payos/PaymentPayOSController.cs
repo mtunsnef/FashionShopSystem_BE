@@ -1,138 +1,105 @@
-﻿//using FashionShopSystem.Service.DTOs.PayOsDto;
-//using FashionShopSystem.Service.Services.OrderService;
-//using Microsoft.AspNetCore.Http;
-//using Microsoft.AspNetCore.Mvc;
+﻿using FashionShopSystem.Domain.Enums;
+using FashionShopSystem.Domain.Exceptions.Http;
+using FashionShopSystem.Domain.Utils;
+using FashionShopSystem.Infrastructure;
+using FashionShopSystem.Infrastructure.Repositories.OrderRepo;
+using FashionShopSystem.Service.DTOs.PayOsDto;
+using FashionShopSystem.Service.Services.UserService;
+using Microsoft.AspNetCore.Mvc;
+using System.Web;
 
-//namespace FashionShopSystem.API.Controllers.Payos
-//{
-//    [Route("[controller]")]
-//    public class PaymentPayOSController : Controller
-//    {
-//        private readonly ILogger<PaymentPayOSController> _logger;
-//        private readonly IOrderService _orderService;
-//        public PaymentPayOSController(ILogger<PaymentPayOSController> logger, IOrderService orderService)
-//        {
-//            _logger = logger;
-//            _orderService = orderService;
-//        }
+namespace FashionShopSystem.API.Controllers.Payos
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class PaymentPayOSController : ControllerBase
+    {
+        private readonly ILogger<PaymentPayOSController> _logger;
+        private readonly IOrderRepository _orderRepository;
+        private readonly IProductRepo _productRepository;
+        private readonly IConfiguration _configuration;
 
-//        public IActionResult Index()
-//        {
-//            return View();
-//        }
+        public PaymentPayOSController(
+            ILogger<PaymentPayOSController> logger,
+            IOrderRepository orderRepository,
+            IProductRepo productRepository, IConfiguration configuration)
+        {
+            _logger = logger;
+            _orderRepository = orderRepository;
+            _productRepository = productRepository;
+            _configuration = configuration;
+        }
 
-//        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-//        public IActionResult Error()
-//        {
-//            return View("Error!");
-//        }
+        /// <summary>
+        /// Xử lý thanh toán thành công
+        /// </summary>
+        [HttpGet("success")]
+        public async Task<IActionResult> Success([FromQuery] SuccessPaymentRequest request)
+        {
+            var order = await _orderRepository.GetByIdAsync(request.OrderId)
+                ?? throw new NotFoundException("Không tìm thấy đơn hàng");
 
-//        [HttpGet("success")]
-//        public async Task<IActionResult> Success([FromQuery] int postId, [FromQuery] int amount)
-//        {
-//            try
-//            {
-//                var post = await _postService.GetByIdAsync(postId);
-//                if (post == null)
-//                    return NotFound("Post not found");
+            order.PaymentStatus = PaymentStatus.Paid.ToDbValue();
+            order.DeliveryStatus = DeliveryStatus.Processing.ToDbValue();
+            await _orderRepository.UpdateAsync(order);
 
-//                var postPackage = await _postDetailPackageService.GetByPostIdAsync(postId);
-//                if (postPackage == null)
-//                    return NotFound("Post package not found");
+            var mailService = new MailService(_configuration);
+            var subject = "ShopClothes - Thanh toán thành công";
+            var content = $@"
+                <h2>Chào {order.FullName},</h2>
+                <p>Bạn đã thanh toán thành công đơn hàng #{request.Id} với số tiền <strong>{request.Amount:N0} ₫</strong>.</p>
+                <p>Chúng tôi sẽ giao hàng cho bạn trong thời gian sớm nhất.</p>
+                <p>Cảm ơn bạn đã mua sắm tại <strong>ShopClothes</strong>.</p>
+            ";
+            await mailService.SendEmailAsync(order.Email!, subject, content);
 
-//                string packageTypeName = postPackage.Pricing?.PackageType.PackageTypeName ?? "Tin thường";
-//                var packageType = BadgeHelper.ParsePackageType(packageTypeName);
+            var feRedirectUrl = $"https://localhost:7298/success?" +
+                                $"orderId={request.OrderId}&amount={request.Amount}&code={request.Code}" +
+                                $"&id={request.Id}&status={HttpUtility.UrlEncode(request.Status)}&orderCode={request.OrderCode}";
 
-//                if (BadgeHelper.IsVip(packageType))
-//                {
-//                    post.CurrentStatus = PostStatusHelper.ToDbValue(PostStatus.Active);
-//                }
-//                else
-//                {
-//                    post.CurrentStatus = PostStatusHelper.ToDbValue(PostStatus.Pending);
-//                }
+            return Redirect(feRedirectUrl);
+        }
 
-//                postPackage.PaymentStatus = PostPackagePaymentStatusHelper.ToDbValue(PostPackagePaymentStatus.Completed);
-//                //postPackage.PaymentTransactionId = transactionId;
+        /// <summary>
+        /// Xử lý khi hủy thanh toán
+        /// </summary>
+        [HttpGet("cancel")]
+        public async Task<IActionResult> Cancel([FromQuery] CancelPaymentRequest request)
+        {
+            var order = await _orderRepository.GetByIdAsync(request.OrderId)
+                ?? throw new NotFoundException("Không tìm thấy đơn hàng");
 
-//                var payment = new Payment
-//                {
-//                    PostPackageDetailsId = postPackage.Id,
-//                    TotalPrice = postPackage.TotalPrice,
-//                    Status = PaymentStatusHelper.ToDbValue(PaymentStatus.Success),
-//                    PaymentDate = DateTime.Now,
-//                    CreatedAt = DateTime.Now,
-//                    UpdatedAt = DateTime.Now,
-//                    MethodId = 2,
-//                    AccountId = post.AccountId
-//                };
+            order.PaymentStatus = PaymentStatus.Cancelled.ToDbValue();
+            order.DeliveryStatus = DeliveryStatus.Cancelled.ToDbValue();
+            await _orderRepository.UpdateAsync(order);
 
-//                await _paymentService.AddAsync(payment);
-//                await _postService.UpdateAsync(post);
-//                await _postDetailPackageService.UpdateAsync(postPackage);
+            foreach (var detail in order.OrderDetails)
+            {
+                var product = await _productRepository.GetByIdAsync(detail.ProductId);
+                if (product is not null)
+                {
+                    product.Stock += detail.Quantity;
+                    await _productRepository.UpdateAsync(product);
+                }
+            }
 
-//                var model = new PayOSResponseModel
-//                {
-//                    Amount = amount,
-//                    IsSuccess = true,
-//                    CreatedAt = DateTime.Now
-//                };
+            var mailService = new MailService(_configuration);
+            var subject = "ShopClothes - Huỷ thanh toán đơn hàng";
+            var content = $@"
+                <h2>Xin chào {order.FullName},</h2>
+                <p>Đơn hàng #{request.Id} của bạn đã được <strong>hủy thanh toán</strong>.</p>
+                <p>Nếu đây là nhầm lẫn, bạn có thể đặt lại đơn hàng trên website.</p>
+                <p>Cảm ơn bạn đã ghé thăm <strong>ShopClothes</strong>.</p>
+            ";
+            await mailService.SendEmailAsync(order.Email!, subject, content);
 
-//                return View(model);
-//            }
-//            catch (Exception ex)
-//            {
-//                _logger.LogError(ex, "Payment success processing failed for postId {PostId}", postId);
-//                return Redirect("/?error=payment_error");
-//            }
-//        }
+            var statusEncoded = HttpUtility.UrlEncode(request.Status);
 
-//        [HttpGet("/cancel")]
-//        public async Task<IActionResult> Cancel([FromQuery] int postId, [FromQuery] int amount = 0)
-//        {
-//            try
-//            {
-//                if (postId <= 0)
-//                {
-//                    _logger.LogWarning("Cancel payment called without valid postId");
-//                    return BadRequest("Invalid postId");
-//                }
+            var feRedirectUrl = $"https://localhost:7298/cancel?" +
+                                $"orderId={request.OrderId}&amount={request.Amount}&code={request.Code}" +
+                                $"&id={request.Id}&cancel={request.Cancel}&status={statusEncoded}&orderCode={request.OrderCode}";
 
-//                var post = await _postService.GetByIdAsync(postId);
-//                if (post == null)
-//                {
-//                    _logger.LogWarning("Post not found for cancellation. postId={PostId}", postId);
-//                    return NotFound("Post not found");
-//                }
-
-//                var postPackage = await _postDetailPackageService.GetByPostIdAsync(postId);
-//                if (postPackage == null)
-//                {
-//                    _logger.LogWarning("PostPackageDetail not found for cancellation. postId={PostId}", postId);
-//                    return NotFound("Post package not found");
-//                }
-
-//                post.CurrentStatus = PostStatusHelper.ToDbValue(PostStatus.Cancelled);
-//                postPackage.PaymentStatus = PostPackagePaymentStatusHelper.ToDbValue(PostPackagePaymentStatus.Inactive);
-
-//                await _postService.UpdateAsync(post);
-//                await _postDetailPackageService.UpdateAsync(postPackage);
-
-//                var model = new PayOSResponseModel
-//                {
-//                    Amount = amount > 0 ? amount : 50000,
-//                    IsSuccess = false,
-//                    CreatedAt = DateTime.Now
-//                };
-
-//                _logger.LogInformation("Payment cancelled for postId={PostId}, amount={Amount}", postId, amount);
-//                return View(model);
-//            }
-//            catch (Exception ex)
-//            {
-//                _logger.LogError(ex, "Error processing cancelled payment");
-//                return RedirectToAction("Error", "Home");
-//            }
-//        }
-//    }
-//}
+            return Redirect(feRedirectUrl);
+        }
+    }
+}

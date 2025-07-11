@@ -1,4 +1,4 @@
-using FashionShopSystem.API.Middlewares;
+﻿using FashionShopSystem.API.Middlewares;
 using FashionShopSystem.Domain.Models;
 using FashionShopSystem.Infrastructure.Repositories.UserRepo;
 using FashionShopSystem.Infrastructure.Repositories.OrderRepo;
@@ -12,6 +12,9 @@ using Net.payOS;
 using FashionShopSystem.Infrastructure;
 using FashionShopSystem.Service;
 using FashionShopSystem.Service.Services;
+using FashionShopSystem.Service.AutoMapper;
+using Microsoft.Extensions.DependencyInjection;
+using FashionShopSystem.Infrastructure.Repositories.OrderDetailRepo;
 
 namespace FashionShopSystem.API
 {
@@ -114,8 +117,10 @@ namespace FashionShopSystem.API
             builder.Services.AddScoped<IFavouriteRepo, FavouriteRepo>();
             builder.Services.AddScoped<IFavouriteService, FavouriteService>();
 
+            builder.Services.AddScoped<IOrderDetailRepository, OrderDetailRepository>();
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
+
 
             // JWT
             builder.Services.AddAuthentication(options =>
@@ -137,6 +142,9 @@ namespace FashionShopSystem.API
                         System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
                 };
             });
+
+            //Config automapper
+            builder.Services.AddAutoMapper(typeof(OrderProfile));
 
             var app = builder.Build();
 

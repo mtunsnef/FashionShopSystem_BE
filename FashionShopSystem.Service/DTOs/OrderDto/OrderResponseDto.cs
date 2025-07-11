@@ -12,6 +12,8 @@ namespace FashionShopSystem.Service.DTOs.OrderDto
 		public string? DeliveryStatus { get; set; }
 		public string? ShippingAddress { get; set; }
 		public string? Email { get; set; }
+		public string? FullName { get; set; }
+		public string? Note { get; set; }
 		public List<OrderDetailResponseDto> OrderDetails { get; set; } = new List<OrderDetailResponseDto>();
 	}
 
