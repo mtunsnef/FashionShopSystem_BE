@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Security.Claims;
 using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 using FashionShopSystem.Domain.Models;
 using FashionShopSystem.Infrastructure;
 using FashionShopSystem.Service.DTOs.ApiResponseDto;
@@ -14,9 +10,11 @@ namespace FashionShopSystem.Service
     public class FavouriteService : IFavouriteService
     {
         private readonly IFavouriteRepo _favouriteRepo;
-        public FavouriteService(IUserService userService, IFavouriteRepo favouriteRepo)
+        private readonly IUserService _user;
+        public FavouriteService(IUserService userService, IFavouriteRepo favouriteRepo, IUserService user)
         {
             _favouriteRepo = favouriteRepo;
+            _user = user;
         }
         public async Task<ApiResponseDto<FavouriteResponseDto>> AddToFavourites(AddFavouriteDto dto, int UserId)
         {
@@ -69,5 +67,29 @@ namespace FashionShopSystem.Service
             };
             return new ApiResponseDto<FavouriteResponseDto>(true, response, 200, "get success");
         }
+        public async Task<ApiResponseDto<List<FavouriteResponseDto>>> GetFavouritesByUserId(int userId)
+        {
+            var favourites = await _favouriteRepo.GetFavoritesByUserIdAsync(userId);
+
+            var response = favourites.Select(f => new FavouriteResponseDto
+            {
+                FavoriteId = f.FavoriteId,
+                UserId = f.UserId,
+                ProductId = f.ProductId,
+                CreatedAt = f.CreatedAt,
+                Product = new ProductResponseDto
+                {
+                    ProductId = f.Product.ProductId,
+                    ProductName = f.Product.ProductName,
+                    ImageUrl = f.Product.ImageUrl,
+                    Price = f.Product.Price
+                }
+            }).ToList();
+
+
+            return new ApiResponseDto<List<FavouriteResponseDto>>(true, response, 200, "Get success");
+        }
+
+
     }
 }

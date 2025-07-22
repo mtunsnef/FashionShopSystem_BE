@@ -27,8 +27,6 @@ namespace FashionShopSystem.Infrastructure
         {
             return await _dbSet
                 .Include(p => p.Category)
-                .Include(p => p.Favorites)
-                .Include(p => p.OrderDetails)
                 .FirstOrDefaultAsync(p => p.ProductId == (int)id);
         }
 

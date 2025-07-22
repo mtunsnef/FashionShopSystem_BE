@@ -11,5 +11,6 @@ namespace FashionShopSystem.Service
     {
         public Task<ApiResponseDto<FavouriteResponseDto>> AddToFavourites(AddFavouriteDto dto, int UserId);
         public Task<ApiResponseDto<FavouriteResponseDto>> deleteFavourite(int id);
+        public Task<ApiResponseDto<List<FavouriteResponseDto>>> GetFavouritesByUserId(int userId);
     }
 }

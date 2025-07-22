@@ -44,5 +44,22 @@ namespace FashionShopSystem.API.Controllers
             }
             return NotFound(result);
         }
+        [HttpGet("FavouriteByUserId")]
+        public async Task<IActionResult> getFavouritebyUserUd()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid token: User ID not found" });
+            }
+
+            var result = await _favouriteService.GetFavouritesByUserId(userId);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return NotFound(result);
+        }
     }
 }
