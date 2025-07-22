@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FashionShopSystem.Domain.Models;
 
 namespace FashionShopSystem.Service
 {
@@ -12,5 +13,6 @@ namespace FashionShopSystem.Service
         public int? UserId { get; set; }
         public int? ProductId { get; set; }
         public DateTime? CreatedAt { get; set; }
+        public ProductResponseDto Product { get; set; }
     }
 }

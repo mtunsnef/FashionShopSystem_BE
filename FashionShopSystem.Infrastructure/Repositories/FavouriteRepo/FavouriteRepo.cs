@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
+using Microsoft.EntityFrameworkCore;
 using FashionShopSystem.Domain.Models;
 using FashionShopSystem.Infrastructure.Repositories;
 
@@ -12,6 +9,13 @@ namespace FashionShopSystem.Infrastructure
     {
         public FavouriteRepo(FashionShopContext context) : base(context)
         {
+        }
+        public async Task<List<Favorite>> GetFavoritesByUserIdAsync(int userId)
+        {
+            return await _dbSet
+                .Include(f=>f.Product)
+                .Where(f => f.UserId == userId)
+                .ToListAsync();
         }
     }
 }

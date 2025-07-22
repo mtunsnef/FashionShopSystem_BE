@@ -10,5 +10,6 @@ namespace FashionShopSystem.Infrastructure
 {
     public interface IFavouriteRepo : IRepositoryBase<Favorite>
     {
+        public  Task<List<Favorite>> GetFavoritesByUserIdAsync(int userId);
     }
 }

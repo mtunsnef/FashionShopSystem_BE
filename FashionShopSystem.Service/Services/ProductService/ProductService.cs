@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FashionShopSystem.Domain.Models;
 using FashionShopSystem.Infrastructure;
 using FashionShopSystem.Service.DTOs.ApiResponseDto;
+using Microsoft.IdentityModel.Tokens;
 
 namespace FashionShopSystem.Service
 {
@@ -174,6 +175,35 @@ namespace FashionShopSystem.Service
 
                 // Đường dẫn để lưu vào DB (client truy cập được)
                 imagePath = "/images/" + fileName;
+            }
+            if (dto.ImageUrl == null || dto.ImageUrl.Length == 0)
+            {
+                // Nếu không có ảnh mới, giữ nguyên ảnh cũ
+                imagePath = product.ImageUrl;
+            }
+            if (string.IsNullOrEmpty(dto.ProductName))
+            { 
+            dto.ProductName = product.ProductName;
+            }
+            if (string.IsNullOrEmpty(dto.Description))
+            {
+                dto.Description= product.Description;
+            }
+            if (!dto.Price.HasValue)
+            {
+                dto.Price = product.Price;
+            }
+            if (!dto.CategoryId.HasValue)
+            {
+                dto.CategoryId = product.CategoryId;
+            }
+            if (string.IsNullOrEmpty(dto.Brand))
+            {
+                dto.Brand = product.Brand;
+            }
+            if (!dto.Stock.HasValue)
+            {
+                dto.Stock = product.Stock;
             }
 
             // Cập nhật thông tin sản phẩm
