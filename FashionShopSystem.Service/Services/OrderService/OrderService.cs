@@ -1,20 +1,32 @@
+using AutoMapper;
+using FashionShopSystem.Domain.Enums;
 using FashionShopSystem.Domain.Models;
+using FashionShopSystem.Infrastructure.Repositories.OrderDetailRepo;
 using FashionShopSystem.Infrastructure.Repositories.OrderRepo;
 using FashionShopSystem.Service.DTOs.ApiResponseDto;
 using FashionShopSystem.Service.DTOs.OrderDto;
+using FashionShopSystem.Domain.Utils;
+using FashionShopSystem.Domain.Exceptions.Http;
+using FashionShopSystem.Infrastructure;
 
 namespace FashionShopSystem.Service.Services.OrderService
 {
 	public class OrderService : IOrderService
 	{
 		private readonly IOrderRepository _orderRepository;
+        private readonly IMapper _mapper;
+		private readonly IOrderDetailRepository _orderDetailRepository;
+		private readonly IProductRepo _productRepository;
 
-		public OrderService(IOrderRepository orderRepository)
+		public OrderService(IOrderRepository orderRepository, IMapper mapper, IOrderDetailRepository orderDetailRepository, IProductRepo productRepo)
 		{
 			_orderRepository = orderRepository;
+			_mapper = mapper;
+			_orderDetailRepository = orderDetailRepository;
+			_productRepository = productRepo;
 		}
-
-		public async Task<Order?> GetOrderByIdAsync(int id)
+        
+        public async Task<Order?> GetOrderByIdAsync(int id)
 		{
 			Console.WriteLine($"🔍 OrderService.GetOrderByIdAsync called with ID: {id}");
 			return await _orderRepository.GetByIdAsync(id);
@@ -213,5 +225,52 @@ namespace FashionShopSystem.Service.Services.OrderService
 				}).ToList() ?? new List<OrderDetailResponseDto>()
 			};
 		}
-	}
+
+        public async Task<ApiResponseDto<OrderResponseDto>> CreateOrderFromCheckoutAsync(int userId, CreateOrderFromCheckoutDto dto)
+        {
+			var order = new Order
+			{
+				UserId = userId,
+				FullName = dto.FullName,
+				Phone = dto.Phone,
+				Email = dto.Email,
+				ShippingAddress = dto.ShippingAddress,
+				Note = dto.Note,
+				OrderDate = DateTime.UtcNow,
+				PaymentStatus = PaymentStatus.Unpaid.ToDbValue(),
+				DeliveryStatus = DeliveryStatus.Processing.ToDbValue(),
+				TotalAmount = dto.CartItems.Sum(item => item.UnitPrice * item.Quantity)
+            };
+
+            await _orderRepository.AddAsync(order);
+
+			foreach (var item in dto.CartItems)
+			{
+				var product = await _productRepository.GetByIdAsync(item.ProductId);
+				if (product == null)
+					continue;
+
+				if (product.Stock < item.Quantity)
+					throw new BadRequestException($"Sản phẩm '{product.ProductName}' không đủ hàng.");
+
+				product.Stock -= item.Quantity;
+				await _productRepository.UpdateAsync(product);
+
+				var detail = new OrderDetail
+				{
+					OrderId = order.OrderId,
+					ProductId = item.ProductId,
+					Quantity = item.Quantity,
+					Price = item.UnitPrice,
+				};
+				await _orderDetailRepository.AddAsync(detail);
+			}
+
+			var createdOrder = await _orderRepository.GetOrderWithDetailsAsync(order.OrderId);
+
+            var response = _mapper.Map<OrderResponseDto>(createdOrder);
+
+            return new ApiResponseDto<OrderResponseDto>(true, response, 201, "Order created successfully.");
+        }
+    }
 } 

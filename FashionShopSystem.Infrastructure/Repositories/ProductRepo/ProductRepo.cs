@@ -29,5 +29,35 @@ namespace FashionShopSystem.Infrastructure
                 .Include(p => p.Category)
                 .FirstOrDefaultAsync(p => p.ProductId == (int)id);
         }
+
+        public async Task<IEnumerable<Product>> GetFilteredProductsAsync(int? categoryId, string? brand, decimal? minPrice, decimal? maxPrice, string? keyword)
+        {
+            var query = _dbSet.Include(p => p.Category).AsQueryable();
+
+            if (categoryId.HasValue)
+                query = query.Where(p => p.CategoryId == categoryId);
+
+            if (!string.IsNullOrWhiteSpace(brand))
+                query = query.Where(p => p.Brand!.ToLower().Contains(brand.ToLower()));
+
+            if (minPrice.HasValue)
+                query = query.Where(p => p.Price >= minPrice);
+
+            if (maxPrice.HasValue)
+                query = query.Where(p => p.Price <= maxPrice);
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                string lowerKeyword = keyword.ToLower();
+                query = query.Where(p =>
+                    p.ProductName!.ToLower().Contains(lowerKeyword) ||
+                    p.Description!.ToLower().Contains(lowerKeyword) ||
+                    p.Brand!.ToLower().Contains(lowerKeyword) ||
+                    (p.Category != null && p.Category.CategoryName!.ToLower().Contains(lowerKeyword))
+                );
+            }
+
+            return await query.ToListAsync();
+        }
     }
 }

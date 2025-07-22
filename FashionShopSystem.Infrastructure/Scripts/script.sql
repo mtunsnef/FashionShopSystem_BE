@@ -47,12 +47,16 @@ CREATE TABLE Products (
 CREATE TABLE Orders (
     OrderID INT IDENTITY(1,1) PRIMARY KEY,
     UserID INT,
+    FullName NVARCHAR(100) NOT NULL,
+    Phone NVARCHAR(20) NOT NULL,
+    Email NVARCHAR(100) NOT NULL,
+    ShippingAddress NVARCHAR(MAX) NOT NULL,
+    Note NVARCHAR(MAX) NULL,
+    TotalAmount DECIMAL(18,2) NOT NULL,
     OrderDate DATETIME DEFAULT GETDATE(),
-    TotalAmount DECIMAL(18,2),
-    PaymentStatus NVARCHAR(50),
-    DeliveryStatus NVARCHAR(50),
-    ShippingAddress NVARCHAR(255),
-    Email NVARCHAR(100),
+    PaymentStatus NVARCHAR(50) DEFAULT N'Pending',
+    DeliveryStatus NVARCHAR(50) DEFAULT N'Pending',
+
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
 

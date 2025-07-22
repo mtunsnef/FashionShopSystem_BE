@@ -1,4 +1,4 @@
-﻿
+using FashionShopSystem.Service.DTOs;
 using FashionShopSystem.Domain.Models;
 using FashionShopSystem.Infrastructure;
 using FashionShopSystem.Service.DTOs.ApiResponseDto;
@@ -14,5 +14,6 @@ namespace FashionShopSystem.Service
         public Task<ApiResponseDto<Product>> CreateProduct(CreateProductDto dto);
         public Task<ApiResponseDto<ProductResponseDto>> deteletProduct(int id);
         public Task<List<string>> getAllBrand();
+        Task<IEnumerable<ProductDto>> SearchProductsAsync(int? categoryId, string? brand, decimal? minPrice, decimal? maxPrice, string? keyword);
     }
 }

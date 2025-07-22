@@ -1,3 +1,6 @@
+﻿using FashionShopSystem.Service.Services;
+using FashionShopSystem.Service;
+
 ﻿using FashionShopSystem.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +16,14 @@ namespace FashionShopSystem.API.Controllers
         {
             _productService = productService;
         }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> Search([FromQuery] int? categoryId,[FromQuery] string? brand, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice,[FromQuery] string? keyword) 
+        {
+            var products = await _productService.SearchProductsAsync(categoryId, brand, minPrice, maxPrice, keyword);
+            return Ok(products);
+        }
+
         [HttpGet("Product")]
         public async Task<IActionResult> GetAllProductsAsync(int? categoryid, string? keyword,string? sort, string? brand, decimal? price)
         {
