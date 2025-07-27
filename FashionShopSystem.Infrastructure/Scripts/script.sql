@@ -80,3 +80,9 @@ CREATE TABLE Favorites (
     FOREIGN KEY (UserID) REFERENCES Users(UserID),
     FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
 );
+
+ALTER TABLE Users
+ADD 
+    Is2FAEnabled BIT NOT NULL DEFAULT 0,
+    TwoFactorSecretKey NVARCHAR(255) NULL,
+    Temp2FASecretKey NVARCHAR(255) NULL;
