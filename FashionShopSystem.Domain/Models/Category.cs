@@ -1,4 +1,7 @@
-﻿namespace FashionShopSystem.Domain.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace FashionShopSystem.Domain.Models;
 
 public partial class Category
 {

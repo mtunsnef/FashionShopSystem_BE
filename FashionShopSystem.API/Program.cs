@@ -1,20 +1,22 @@
 ﻿using FashionShopSystem.API.Middlewares;
 using FashionShopSystem.Domain.Models;
-using FashionShopSystem.Infrastructure.Repositories.UserRepo;
+using FashionShopSystem.Infrastructure;
+using FashionShopSystem.Infrastructure.Repositories.OrderDetailRepo;
 using FashionShopSystem.Infrastructure.Repositories.OrderRepo;
-using FashionShopSystem.Service.Services.UserService;
+using FashionShopSystem.Infrastructure.Repositories.UserRepo;
+using FashionShopSystem.Service;
+using FashionShopSystem.Service.AutoMapper;
+using FashionShopSystem.Service.Services;
+using FashionShopSystem.Service.Services.AuthService;
 using FashionShopSystem.Service.Services.OrderService;
+using FashionShopSystem.Service.Services.UserService;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Net.payOS;
-using FashionShopSystem.Infrastructure;
-using FashionShopSystem.Service;
-using FashionShopSystem.Service.Services;
-using FashionShopSystem.Service.AutoMapper;
-using Microsoft.Extensions.DependencyInjection;
-using FashionShopSystem.Infrastructure.Repositories.OrderDetailRepo;
+using System.Text.Json;
 
 namespace FashionShopSystem.API
 {
@@ -35,7 +37,7 @@ namespace FashionShopSystem.API
                            .SetMaxTop(100))
                 .AddJsonOptions(options =>
                 {
-                    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
                 });
 
             // Swagger config
@@ -120,6 +122,8 @@ namespace FashionShopSystem.API
             builder.Services.AddScoped<IOrderDetailRepository, OrderDetailRepository>();
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
+
+            builder.Services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
 
 
             // JWT

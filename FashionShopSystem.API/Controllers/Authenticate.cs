@@ -1,7 +1,12 @@
-﻿using System.Text.Json;
+﻿using FashionShopSystem.Domain.Exceptions.Http;
+using FashionShopSystem.Service.DTOs.AuthDto;
 using FashionShopSystem.Service.DTOs.UserDto;
+using FashionShopSystem.Service.Services.AuthService;
 using FashionShopSystem.Service.Services.UserService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace FashionShopSystem.API.Controllers
 {
@@ -11,10 +16,13 @@ namespace FashionShopSystem.API.Controllers
 	{
 		private readonly IUserService _userService;
 		private readonly IConfiguration _configuration;
-		public Authenticate(IUserService userService, IConfiguration configuration)
+		private readonly ITwoFactorAuthService _twoFactorAuthService;
+        public Authenticate(IUserService userService, IConfiguration configuration,
+			ITwoFactorAuthService twoFactorAuthService)
 		{
 			_userService = userService;
 			_configuration = configuration;
+			_twoFactorAuthService = twoFactorAuthService;
 		}
 
 		[HttpPost("register")]
@@ -137,5 +145,59 @@ namespace FashionShopSystem.API.Controllers
 			return Redirect($"https://localhost:7298/trang-chu?token={result.Data}");
 		}
 
-	}
+        [HttpGet("2fa/generate-secret")]
+        public async Task<ActionResult> GenerateSecret()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                throw new UnauthorizedException("User not authenticated.");
+            }
+
+            var result = await _twoFactorAuthService.GenerateSecretAsync(userId);
+            return Ok(result);
+        }
+
+        [HttpPost("2fa/verify-code")]
+        public async Task<IActionResult> VerifyCode([FromBody] TwoFaVerifyDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                throw new UnauthorizedException("User not authenticated.");
+            }
+
+            var isValid = await _twoFactorAuthService.VerifyCodeAsync(userId, dto.Code);
+            return Ok(isValid);
+        }
+
+        [HttpGet("2fa/is-enabled")]
+        public async Task<IActionResult> Is2FAEnabled()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                throw new UnauthorizedException("User not authenticated.");
+            }
+
+            var isEnabled = await _twoFactorAuthService.Check2FAEnabledAsync(userId);
+            return Ok(isEnabled);
+        }
+
+
+        [HttpPost("2fa/verify-token-after-login")]
+        [Authorize]
+        public async Task<IActionResult> VerifyTokenAfterLogin([FromBody] TwoFaCodeDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                throw new UnauthorizedException("User not authenticated.");
+            }
+
+            var isValid = await _twoFactorAuthService.VerifyCodeAfterLoginAsync(userId, dto.Code);
+
+            return Ok(isValid);
+        }
+    }
 }

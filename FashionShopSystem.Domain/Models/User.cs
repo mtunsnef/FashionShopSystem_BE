@@ -23,6 +23,12 @@ public partial class User
 
     public bool? IsActive { get; set; }
 
+    public bool Is2Faenabled { get; set; }
+
+    public string? TwoFactorSecretKey { get; set; }
+
+    public string? Temp2FasecretKey { get; set; }
+
     public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
